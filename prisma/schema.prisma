@@ -1,0 +1,70 @@
+﻿generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  role          UserRole       @default(RIDER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  driver        Driver?
+  tripsAsRider  Trip[]         @relation("RiderTrips")
+  tripsAsDriver Trip[]         @relation("DriverTrips")
+  refreshTokens RefreshToken[]
+}
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id])
+  isOnline  Boolean  @default(false)
+  lat       Float?
+  lng       Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trips     Trip[]   @relation("DriverTrips")
+}
+
+model Trip {
+  id         Int         @id @default(autoincrement())
+  riderId    Int
+  driverId   Int?
+  rider      User        @relation("RiderTrips", fields: [riderId], references: [id])
+  driver     User?       @relation("DriverTrips", fields: [driverId], references: [id])
+  status     TripStatus  @default(PENDING)
+  originLat  Float
+  originLng  Float
+  destLat    Float
+  destLng    Float
+  price      Float
+  createdAt  DateTime    @default(now())
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+enum TripStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  CANCELED
+}
+
+enum UserRole {
+  RIDER
+  DRIVER
+  ADMIN
+}
