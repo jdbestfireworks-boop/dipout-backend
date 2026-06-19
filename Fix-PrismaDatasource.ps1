@@ -10,10 +10,5 @@ datasource db {
 model Driver {
   id        Int      @id @default(autoincrement())
   name      String
-  email     String
-  phone     String
-  lat       Float
-  lng       Float
-  status    String
   createdAt DateTime @default(now())
 }
