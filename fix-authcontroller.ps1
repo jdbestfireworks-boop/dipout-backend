@@ -1,3 +1,6 @@
+Write-Host "Fixing authController.js..." -ForegroundColor Cyan
+
+@"
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -48,7 +51,7 @@ export const register = async (req, res) => {
     const expiresAt = Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
     otps.set(email, { code, expiresAt });
 
-    console.log(`OTP for ${email}: ${code}`);
+    console.log(\`OTP for \${email}: \${code}\`);
 
     return res.status(200).json({ message: "User registered. OTP sent." });
   } catch (err) {
@@ -115,7 +118,7 @@ export const resendOtp = (req, res) => {
     const expiresAt = Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
     otps.set(email, { code, expiresAt });
 
-    console.log(`Resent OTP for ${email}: ${code}`);
+    console.log(\`Resent OTP for \${email}: \${code}\`);
 
     return res.status(200).json({ message: "OTP resent" });
   } catch (err) {
@@ -155,3 +158,6 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+"@ | Set-Content "./controllers/authController.js"
+
+Write-Host "authController.js fixed successfully!" -ForegroundColor Green

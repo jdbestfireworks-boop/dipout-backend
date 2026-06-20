@@ -1,3 +1,19 @@
+# ============================================
+# DipOut — FULL OTP BACKEND AUTO‑SETUP SCRIPT
+# ============================================
+
+Write-Host "Starting full OTP backend setup..." -ForegroundColor Cyan
+
+# 1. Ensure controllers folder exists
+if (!(Test-Path "./controllers")) {
+    Write-Host "Creating controllers folder..."
+    New-Item -ItemType Directory -Path "./controllers" | Out-Null
+}
+
+# 2. Create authController.js
+Write-Host "Writing controllers/authController.js..."
+
+@"
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -48,7 +64,7 @@ export const register = async (req, res) => {
     const expiresAt = Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
     otps.set(email, { code, expiresAt });
 
-    console.log(`OTP for ${email}: ${code}`);
+    console.log(\`OTP for \${email}: \${code}\`);
 
     return res.status(200).json({ message: "User registered. OTP sent." });
   } catch (err) {
@@ -115,7 +131,7 @@ export const resendOtp = (req, res) => {
     const expiresAt = Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
     otps.set(email, { code, expiresAt });
 
-    console.log(`Resent OTP for ${email}: ${code}`);
+    console.log(\`Resent OTP for \${email}: \${code}\`);
 
     return res.status(200).json({ message: "OTP resent" });
   } catch (err) {
@@ -155,3 +171,41 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+"@ | Set-Content "./controllers/authController.js"
+
+# 3. Update routes/authRoutes.js
+Write-Host "Updating routes/authRoutes.js..."
+
+@"
+import express from "express";
+import { register, login, verifyOtp, resendOtp } from "../controllers/authController.js";
+
+const router = express.Router();
+
+router.post("/register", register);
+router.post("/verify-otp", verifyOtp);
+router.post("/resend-otp", resendOtp);
+router.post("/login", login);
+
+export default router;
+"@ | Set-Content "./routes/authRoutes.js"
+
+# 4. Fix package.json scripts (even if scripts section doesn't exist)
+Write-Host "Fixing package.json scripts..."
+
+$package = Get-Content "./package.json" -Raw | ConvertFrom-Json
+
+if (-not $package.PSObject.Properties.Name -contains "scripts") {
+    $package | Add-Member -MemberType NoteProperty -Name "scripts" -Value (@{})
+}
+
+$package.scripts.dev = "nodemon index.js"
+$package.scripts.start = "node index.js"
+
+$package | ConvertTo-Json -Depth 10 | Set-Content "./package.json"
+
+# 5. Install required packages
+Write-Host "Installing bcryptjs, jsonwebtoken, nodemon..."
+npm install bcryptjs jsonwebtoken nodemon --save-dev
+
+Write-Host "FULL OTP backend setup complete!" -ForegroundColor Green
